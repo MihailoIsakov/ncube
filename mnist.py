@@ -114,14 +114,18 @@ def build_mlp(input_var=None):
     w1 = theano.shared(floatX(w_init((1024, 1024))))
     mask = adjacency_matrix(10).astype(np.float32)
     cube1 = lasagne.layers.DenseLayer(l_in, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w1*mask)
+    bn1   = lasagne.layers.batch_norm(cube1)
     w2 = theano.shared(floatX(w_init((1024, 1024))))
-    cube2 = lasagne.layers.DenseLayer(cube1, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w2*mask)
+    cube2 = lasagne.layers.DenseLayer(bn1, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w2*mask)
+    bn2   = lasagne.layers.batch_norm(cube2)
     w3 = theano.shared(floatX(w_init((1024, 1024))))
-    cube3 = lasagne.layers.DenseLayer(cube2, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w3*mask)
+    cube3 = lasagne.layers.DenseLayer(bn2, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w3*mask)
+    bn3   = lasagne.layers.batch_norm(cube3)
     w4 = theano.shared(floatX(w_init((1024, 1024))))
-    cube4 = lasagne.layers.DenseLayer(cube3, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w4*mask)
+    cube4 = lasagne.layers.DenseLayer(bn3, num_units=1024, nonlinearity=lasagne.nonlinearities.linear, W=w4*mask)
+    bn4   = lasagne.layers.batch_norm(cube4)
     w5 = theano.shared(floatX(w_init((1024, 1024))))
-    l_hid1 = lasagne.layers.DenseLayer(cube3, num_units=1024, nonlinearity=lasagne.nonlinearities.rectify, W=w5*mask)
+    l_hid1 = lasagne.layers.DenseLayer(bn4, num_units=1024, nonlinearity=lasagne.nonlinearities.rectify, W=w5*mask)
 
     # Another 800-unit layer:
     l_hid2 = lasagne.layers.DenseLayer(
@@ -196,7 +200,7 @@ def main(model='mlp', num_epochs=500):
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     params = lasagne.layers.get_all_params(network, trainable=True)
     updates = lasagne.updates.nesterov_momentum(
-            loss, params, learning_rate=0.05, momentum=0.9)
+            loss, params, learning_rate=0.005, momentum=0.9)
 
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
